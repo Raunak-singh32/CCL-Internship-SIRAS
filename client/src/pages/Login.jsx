@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,9 +16,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await api.post('/auth/login', { email, password });
-      const token = res.data.token;
-      login(token);
+      await login(email, password);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

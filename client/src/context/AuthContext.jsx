@@ -1,51 +1,45 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api.js';
+import api from '../services/api';
 
-const AuthContext = createContext(null);
-
-export const useAuth = () => useContext(AuthContext);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUser = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await api.get('/auth/me');
-      setUser(res.data?.data || null);
-    } catch (err) {
-      console.error('Auth fetch failed:', err.message);
-      localStorage.removeItem('token');
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchUser();
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await api.get('/auth/me');
+          setUser(res.data.data);
+        } catch (err) {
+          console.error('Auth init failed:', err);
+          localStorage.removeItem('token');
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+    initAuth();
   }, []);
 
-  const login = (token) => {
+  const login = async (email, password) => {
+    const res = await api.post('/auth/login', { email, password });
+    const { token, data: userData } = res.data;
     localStorage.setItem('token', token);
-    fetchUser();
+    setUser(userData);
+    return userData;
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    window.location.href = '/login';
   };
 
   const hasRole = (roles) => {
     if (!user || !user.role) return false;
-    if (typeof roles === 'string') return user.role === roles;
     return roles.includes(user.role);
   };
 
@@ -55,3 +49,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);
