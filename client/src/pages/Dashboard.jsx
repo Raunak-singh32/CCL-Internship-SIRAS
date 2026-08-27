@@ -18,23 +18,46 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const [sumRes, trendRes, catRes, sevRes] = await Promise.all([
-          api.get('/analytics/summary'),
-          api.get('/analytics/trends'),
-          api.get('/analytics/categories'),
-          api.get('/analytics/severity')
-        ]);
-        setSummary(sumRes.data.data);
-        setTrends(trendRes.data.data || []);
-        setCategories(catRes.data.data || []);
-        setSeverity(sevRes.data.data || []);
-      } catch (err) {
-        console.error('Dashboard fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  try {
+    const [sumRes, trendRes, catRes, sevRes] = await Promise.all([
+      api.get('/analytics/summary'),
+      api.get('/analytics/trends'),
+      api.get('/analytics/categories'),
+      api.get('/analytics/severity')
+    ]);
+
+    setSummary(sumRes.data.data);
+
+    // Fix trends: convert {_id: {year, month}, count} → {month: "Jan 2026", count}
+    const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const formattedTrends = (trendRes.data.data || [])
+      .map(t => ({
+        month: `${monthNames[t._id.month]} ${t._id.year}`,
+        count: t.count
+      }))
+      .reverse();
+    setTrends(formattedTrends);
+
+    // Fix categories: convert {_id: "electrical", count} → {category: "electrical", count}
+    const formattedCats = (catRes.data.data || []).map(c => ({
+      category: c._id,
+      count: c.count
+    }));
+    setCategories(formattedCats);
+
+    // Fix severity: convert {_id: "high", count} → {severity: "high", count}
+    const formattedSev = (sevRes.data.data || []).map(s => ({
+      severity: s._id,
+      count: s.count
+    }));
+    setSeverity(formattedSev);
+
+  } catch (err) {
+    console.error('Dashboard fetch error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
     fetchData();
   }, []);
 

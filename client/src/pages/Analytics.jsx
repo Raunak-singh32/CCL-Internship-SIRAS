@@ -17,29 +17,63 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const [sumRes, trendRes, catRes, sevRes, locRes, riskRes] = await Promise.all([
-          api.get('/analytics/summary'),
-          api.get('/analytics/trends'),
-          api.get('/analytics/categories'),
-          api.get('/analytics/severity'),
-          api.get('/analytics/locations'),
-          api.get('/analytics/risk-heatmap')
-        ]);
+   const fetchAll = async () => {
+  try {
+    const [sumRes, trendRes, catRes, sevRes, locRes, riskRes] = await Promise.all([
+      api.get('/analytics/summary'),
+      api.get('/analytics/trends'),
+      api.get('/analytics/categories'),
+      api.get('/analytics/severity'),
+      api.get('/analytics/locations'),
+      api.get('/analytics/risk-heatmap')
+    ]);
 
-        setSummary(sumRes.data.data);
-        setTrends(trendRes.data.data || []);
-        setCategories(catRes.data.data || []);
-        setSeverity(sevRes.data.data || []);
-        setLocations(locRes.data.data || []);
-        setRiskHeatmap(riskRes.data.data || []);
-      } catch (err) {
-        console.error('Analytics fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setSummary(sumRes.data.data);
+
+    // Fix trends
+    const monthNames = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const formattedTrends = (trendRes.data.data || [])
+      .map(t => ({
+        month: `${monthNames[t._id.month]} ${t._id.year}`,
+        count: t.count
+      }))
+      .reverse();
+    setTrends(formattedTrends);
+
+    // Fix categories
+    setCategories((catRes.data.data || []).map(c => ({
+      category: c._id,
+      count: c.count
+    })));
+
+    // Fix severity
+    setSeverity((sevRes.data.data || []).map(s => ({
+      severity: s._id,
+      count: s.count
+    })));
+
+    // Fix locations
+    setLocations((locRes.data.data || []).map(l => ({
+      location: l._id,
+      total: l.count,
+      critical: l.critical || 0
+    })));
+
+    // Fix risk heatmap
+    setRiskHeatmap((riskRes.data.data || []).map(r => ({
+      category: r.mineLocation || r._id,
+      low: r.low || 0,
+      medium: r.medium || 0,
+      high: r.high || 0,
+      critical: r.critical || 0
+    })));
+
+  } catch (err) {
+    console.error('Analytics fetch error:', err);
+  } finally {
+    setLoading(false);
+  }
+};
     fetchAll();
   }, []);
 
