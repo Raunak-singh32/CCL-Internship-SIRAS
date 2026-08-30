@@ -16,7 +16,7 @@ const app = express();
 
 // Middleware
 // CORS: allow local dev + future Vercel frontend (add CLIENT_URL in Render env later)
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = ['http://localhost:5173', 'https://ccl-internship-siras.vercel.app'];
 if (process.env.CLIENT_URL) allowedOrigins.push(process.env.CLIENT_URL);
 
 app.use(cors({
