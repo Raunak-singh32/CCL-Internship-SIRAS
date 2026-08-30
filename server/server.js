@@ -51,6 +51,33 @@ app.use('/api/auth', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/reports', reportRoutes);
+// ==========================================
+// TEMPORARY SEED ROUTE (remove after use)
+// ==========================================
+app.get('/seed-users', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const User = require('./models/User');
+    
+    await User.deleteMany({});
+    
+    const h1 = await bcrypt.hash('admin123', 10);
+    await User.create({ name: 'Admin', email: 'admin@ccl.co.in', password: h1, role: 'admin' });
+    
+    const h2 = await bcrypt.hash('safety123', 10);
+    await User.create({ name: 'Safety Officer', email: 'safety@ccl.co.in', password: h2, role: 'safety-officer' });
+    
+    const h3 = await bcrypt.hash('manager123', 10);
+    await User.create({ name: 'Mine Manager', email: 'manager@ccl.co.in', password: h3, role: 'mine-manager' });
+    
+    const h4 = await bcrypt.hash('reporter123', 10);
+    await User.create({ name: 'Reporter', email: 'reporter@ccl.co.in', password: h4, role: 'reporter' });
+    
+    res.json({ success: true, message: '4 users seeded successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // ==========================================
 // 404 Handler
